@@ -4,20 +4,34 @@ from collections import defaultdict
 
 
 class Conversation:
+    """Class to represent a conversation and contains the logic to determine the cosine similarity to this and a query
+
+    Returns:
+        Conversation: this
+    """
     dictionary = set()
     postings = defaultdict(dict)
-    # document_frequency = defaultdict(int)
     length = 0.0
 
     characters = " .,!#$%^&*();:\n\t\\\"?!{}[]<>"
 
     def __init__(self, content):
+        """Constructs new instance of Conversation
+
+        Args:
+            content (string): The conversation data
+        """
         self.N = content.count('\n')
         self.initialize_terms_and_postings(content)
-        # self.initialize_document_frequencies()
         self.initialize_length()
 
     def initialize_terms_and_postings(self, content):
+        """Tokenizes the terms in this conversation and builds a dictionary based on them. 
+            It then determines that count of each word in the dictionary
+
+        Args:
+            content (string): The conversation data
+        """
         terms = self.tokenize(content)
         unique_terms = set(terms)
         self.dictionary = self.dictionary.union(unique_terms)
@@ -25,56 +39,51 @@ class Conversation:
             self.postings[term] = terms.count(term)
 
     def tokenize(self, content):
+        """Splits and strips a string into individual words
+
+        Args:
+            content (string): The content to tokenize
+
+        Returns:
+            array<String>: The tokenized content
+        """
         terms = content.lower().split()
         return [term.strip(self.characters) for term in terms]
 
-    # def initialize_document_frequencies(self):
-    #     for term in self.dictionary:
-    #         self.document_frequency[term] = len(self.postings[term])
-
     def initialize_length(self):
+        """Determine the Euclidean length of this conversation
+        """
         l = 0
         for term in self.dictionary:
             l += self.imp(term)**2
         self.length = math.sqrt(l)            
 
     def imp(self, term):
+        """Determine the importance of a term to this conversation. Originally used inverse document freq as well, but as this is a single conversation that has been removed
+
+        Args:
+            term (string): The term to determine the importance of
+
+        Returns:
+            float: The importance of the passed in word to this conversation
+        """
         if self.postings[term] is not None:
             return self.postings[term]
-            # return self.postings[term] * self.inverse_document_frequency(term)
         else:
             return 0.0
 
-    # def inverse_document_frequency(self, term):
-    #     if term in self.dictionary:
-    #         return math.log(self.N/self.document_frequency[term],2)
-    #     else:
-    #         return 0.0
-
     def do_search(self, query):
-        score = self.similarity(query)
-        # relevant_document_ids = self.intersection(
-        #         [set(self.postings[term].keys()) for term in query])
-        # if not relevant_document_ids:
-        #     print("No documents matched all query terms.")
-        # else:
-            # scores = sorted([(id,self.similarity(query))
-            #                 for id in relevant_document_ids],
-            #                 key=lambda x: x[1],
-            #                 reverse=True)
-        # print("Score: " + str(score))
-        return score
-            # for (id,score) in scores:
-            #     print(str(score)+": "+self.document_filenames[id])
-    
-    def intersection(self, sets):
-        return functools.reduce(set.union, [s for s in sets])
+        """Return the cosine similarity between the passed in query and this document
 
-    def similarity(self, query):
+        Args:
+            query (array<String>): Array of words to query
+
+        Returns:
+            float: The cosine similarity between the passed in query and this document
+        """
         similarity = 0.0
         for term in query:
             if term in self.dictionary:
-                # similarity += self.inverse_document_frequency(term)*self.imp(term)
                 similarity += self.imp(term)
         similarity = similarity / self.length
         return similarity
